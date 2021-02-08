@@ -10,9 +10,11 @@ CONFIG += c++17 console
 
 SOURCES += \
     main.cpp \
+    settings.cpp \
     uiplayer.cpp
 
 HEADERS += \
+    settings.h \
     uiplayer.h
 
 FORMS += \
