@@ -1,11 +1,11 @@
-#include "uiplayer.h"
+#include "stackedspotify.h"
 
 #include <QApplication>
 
 int main(int argc, char *argv[])
 {
     QApplication a(argc, argv);
-    UiPlayer w;
+    StackedSpotify w;
     w.show();
     return a.exec();
 }

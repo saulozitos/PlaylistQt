@@ -2,10 +2,18 @@
 
 #include <QWidget>
 #include <QString>
+#include <QPair>
+#include <QVector>
+#include "auth.h"
+#include "spotify.h"
+#include <memory>
 
 namespace Ui {
 class UiPlayer;
 }
+
+class Playlist;
+class TrackData;
 
 class UiPlayer : public QWidget
 {
@@ -30,8 +38,17 @@ private:
     Ui::UiPlayer *ui;
 
     bool isPlaying;
-    QString cacheLocation;
+    QString dataLocation;
 
+    std::unique_ptr<Spotify>spotify;
+    QVector< QPair<QString, Playlist*>>playlists;
+    QVector<TrackData>dataSearch;
+
+    Playlist* getCurrentPlaylist(const QString &playlistName);
     void removePlaylist();
+    void loadPlaylist(const QString &path, const QString &file);
+    void addPlayList(const QString &playlistName);
+    void addTrack(const QString &playlistName, const TrackData &trackData);
+    void checkDataPath();
 };
 

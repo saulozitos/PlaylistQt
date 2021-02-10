@@ -14,6 +14,7 @@ Auth::Auth(QWidget *parent) : QDialog(parent),
     server(std::make_unique<QTcpServer>(this)),
     settings(Settings::getInstance())
 {
+
     if(server != nullptr)
     {
         if(!server->listen(QHostAddress::LocalHost, 8888))
@@ -28,32 +29,38 @@ Auth::Auth(QWidget *parent) : QDialog(parent),
 
         QTcpServer::connect(server.get(), &QTcpServer::newConnection, [this]()
         {
+            // Read
             auto *socket = server->nextPendingConnection();
             socket->waitForReadyRead();
             auto response = QString(socket->readAll());
             qDebug() << "response" << response << "\n";
 
+            // Client might want to request favicon or something
             if (!response.contains(QLatin1String("?code=")))
             {
                 socket->close();
                 return;
             }
 
+            // GET /?code=<code> HTTP...
             auto left = response.left(response.indexOf(QLatin1String(" HTTP")));
-            qDebug() << "left" << left << "\n";
-
             auto code = left.right(left.length() - left.indexOf(QLatin1String("?code=")) - 6);
             settings.setCode(code);
-            qDebug() << "code" << code << "\n";
-
             auto status = auth();
-            qDebug() << "status" << status << "\n";
+
+            QString msn;
+            if(status.isEmpty())
+                msn = QStringLiteral("success, you can now return to app");
+            else
+            {
+                msn = QStringLiteral("failed to authenticate: %1").arg(status);
+                emit connectionError(msn);
+            }
+
 
             // Write
-            socket->write(QStringLiteral("HTTP/1.1 200 OK\r\n\r\n%1")
-                .arg(status.isEmpty()
-                    ? QStringLiteral("success, you can now return to app")
-                    : QStringLiteral("failed to authenticate: %1").arg(status)).toUtf8());
+            socket->write(QStringLiteral("HTTP/1.1 200 OK\r\n\r\n%1").arg(msn).toUtf8());
+
             socket->flush();
             socket->waitForBytesWritten(3000);
             socket->close();
@@ -64,11 +71,12 @@ Auth::Auth(QWidget *parent) : QDialog(parent),
                 server->close();
                 accept();
             }
+
+            emit connectionOk();
         });
     }
 
     const auto url = authUrl();
-    qDebug()<< "url" << url << "\n";
 
     if(!QDesktopServices::openUrl(QUrl(url)))
         QMessageBox::critical(this, QStringLiteral("openUrl error"),

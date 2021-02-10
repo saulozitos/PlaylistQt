@@ -31,12 +31,16 @@ public:
     std::chrono::seconds getAccessTokenExpiryTime() const;
     void setAccessTokenExpiryTime(const int value);
 
+    QString getCacheLocation() const;
+    void setCacheLocation(const QString &value);
+
 private:
     Settings();
     ~Settings() = default;
     Settings(const Settings&) = delete;
     Settings& operator = (const Settings&) = delete;
 
+    QString cacheLocation;
     QString clientId;
     QString clientSecret;
     QString redirect;

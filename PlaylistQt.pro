@@ -11,15 +11,28 @@ CONFIG += c++17 console
 SOURCES += \
     auth.cpp \
     main.cpp \
+    playlist.cpp \
+    searchformatter.cpp \
     settings.cpp \
+    spotify.cpp \
+    stackedspotify.cpp \
+    uilogin.cpp \
     uiplayer.cpp
 
 HEADERS += \
     auth.h \
+    playlist.h \
+    searchformatter.h \
     settings.h \
+    spotify.h \
+    stackedspotify.h \
+    structs.h \
+    uilogin.h \
     uiplayer.h
 
 FORMS += \
+    stackedspotify.ui \
+    uilogin.ui \
     uiplayer.ui
     
 # Default rules for deployment.

@@ -19,5 +19,9 @@ private:
     std::unique_ptr<QNetworkAccessManager>networkManager;
     std::unique_ptr<QTcpServer>server;
     Settings &settings;
+
+signals:
+    void connectionOk();
+    void connectionError(const QString &msn);
 };
 

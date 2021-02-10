@@ -2,19 +2,28 @@
 
 namespace DevAcount
 {
-    constexpr auto id = "b782dcea513b41f385613b99a7ad9945";
-    constexpr auto secret = "";
     constexpr auto addrRedirect = "http://localhost:8888";
 }
 
 Settings::Settings() :
-    clientId(DevAcount::id),
-    clientSecret(DevAcount::secret),
+    cacheLocation(QLatin1String("")),
+    clientId(QLatin1String("")),
+    clientSecret(QLatin1String("")),
     redirect(DevAcount::addrRedirect),
-    code(QStringLiteral("")),
-    accessToken(QStringLiteral("")),
-    refreshToken(QStringLiteral(""))
+    code(QLatin1String("")),
+    accessToken(QLatin1String("")),
+    refreshToken(QLatin1String(""))
 {}
+
+QString Settings::getCacheLocation() const
+{
+    return cacheLocation;
+}
+
+void Settings::setCacheLocation(const QString &value)
+{
+    cacheLocation = value;
+}
 
 Settings &Settings::getInstance()
 {
