@@ -44,11 +44,12 @@ private:
     QVector< QPair<QString, Playlist*>>playlists;
     QVector<TrackData>dataSearch;
 
-    Playlist* getCurrentPlaylist(const QString &playlistName);
+    Playlist* getCurrentPlaylist();
     void removePlaylist();
     void loadPlaylist(const QString &path, const QString &file);
     void addPlayList(const QString &playlistName);
-    void addTrack(const QString &playlistName, const TrackData &trackData);
+    void addTrack(const TrackData &trackData);
     void checkDataPath();
+    QString getPreviewUrl();
 };
 

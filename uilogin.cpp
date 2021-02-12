@@ -9,6 +9,9 @@ UiLogin::UiLogin(QWidget *parent) :
 {
     ui->setupUi(this);
 
+    ui->lnUser->setText(QStringLiteral("b782dcea513b41f385613b99a7ad9945"));
+    ui->lnPass->setText(QStringLiteral("991c9203c980417e9d9335c2ebabb7bd"));
+
     connect(ui->btnCancel, &QPushButton::clicked, [this](){
         ui->lnUser->clear();
         ui->lnPass->clear();

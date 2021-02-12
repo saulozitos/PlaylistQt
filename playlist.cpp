@@ -51,6 +51,11 @@ QVector<TrackData> Playlist::getPlaylist() const
     return playlist;
 }
 
+QString Playlist::getPreviewUrl(const int index)
+{
+    return playlist.at(index).previewUrl;
+}
+
 void Playlist::addToJsonArray(const TrackData &trackData)
 {
     QJsonObject newTrack

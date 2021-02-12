@@ -17,6 +17,8 @@ public:
 
     QVector<TrackData> getPlaylist() const;
 
+    QString getPreviewUrl(const int index);
+
 private:
     QString name;
     QVector<TrackData>playlist;

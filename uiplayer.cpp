@@ -6,6 +6,7 @@
 #include <QDir>
 #include <QStandardPaths>
 #include <QInputDialog>
+#include <QRandomGenerator>
 #include <algorithm>
 #include "settings.h"
 
@@ -21,7 +22,7 @@ UiPlayer::UiPlayer(QWidget *parent) :
     QWidget(parent),
     ui(new Ui::UiPlayer),
     isPlaying(false),
-    dataLocation(QCoreApplication::applicationDirPath()),
+    dataLocation(QStandardPaths::standardLocations(QStandardPaths::CacheLocation).constFirst()),
     spotify(std::make_unique<Spotify>(this))
 {
     ui->setupUi(this);
@@ -129,7 +130,7 @@ void UiPlayer::on_btnRemovePlaylist_clicked()
             return p.first == playlistName;
         }), playlists.end());
 
-        auto *currentPlaylist = getCurrentPlaylist(playlistName);
+        auto *currentPlaylist = getCurrentPlaylist();
         currentPlaylist->removeAll();
 
         ui->comboBox->removeItem(ui->comboBox->currentIndex());
@@ -144,8 +145,7 @@ void UiPlayer::on_btnAddTrack_clicked()
     if(!ui->listWidget->currentIndex().data().toString().isEmpty())
     {
         const auto trackData = dataSearch.at(ui->listWidget->currentIndex().row());
-        const auto playlistName = ui->comboBox->currentText();
-        addTrack(playlistName, trackData);
+        addTrack(trackData);
     }
 }
 
@@ -154,7 +154,7 @@ void UiPlayer::on_btnRemoveTrack_clicked()
     const auto playlistName = ui->comboBox->currentText();
     if(!playlistName.isEmpty())
     {
-        auto *currentPlaylist = getCurrentPlaylist(playlistName);
+        auto *currentPlaylist = getCurrentPlaylist();
         currentPlaylist->removeTrack(ui->listViewPlaylist->currentIndex().row());
 
         if(ui->listViewPlaylist->count() > 0)
@@ -168,8 +168,9 @@ void UiPlayer::on_btnRemoveTrack_clicked()
     }
 }
 
-Playlist *UiPlayer::getCurrentPlaylist(const QString &playlistName)
+Playlist *UiPlayer::getCurrentPlaylist()
 {
+    const auto playlistName = ui->comboBox->currentText();
     return std::find_if(playlists.begin(), playlists.end(), [playlistName] (const QPair<QString, Playlist*>&pair) {
         return pair.first == playlistName;
     })->second;
@@ -177,10 +178,9 @@ Playlist *UiPlayer::getCurrentPlaylist(const QString &playlistName)
 
 void UiPlayer::removePlaylist()
 {
-    const auto playlistName = ui->comboBox->currentText();
-    if(!playlistName.isEmpty())
+    if(!ui->comboBox->currentText().isEmpty())
     {
-        auto *currentPlaylist = getCurrentPlaylist(playlistName);
+        auto *currentPlaylist = getCurrentPlaylist();
 
         if(ui->listViewPlaylist->count() > 0)
             ui->listViewPlaylist->clear();
@@ -203,7 +203,7 @@ void UiPlayer::loadPlaylist(const QString &path, const QString &file)
     ui->listViewPlaylist->clear();
     for(const auto &trackData : playlistData.second)
     {
-        addTrack(playlistName, trackData);
+        addTrack(trackData);
     }
 }
 
@@ -217,9 +217,9 @@ void UiPlayer::addPlayList(const QString &playlistName)
     }
 }
 
-void UiPlayer::addTrack(const QString &playlistName, const TrackData &trackData)
+void UiPlayer::addTrack(const TrackData &trackData)
 {
-    auto *currentPlaylist = getCurrentPlaylist(playlistName);
+    auto *currentPlaylist = getCurrentPlaylist();
     currentPlaylist->addtrack(trackData);
 
     auto last = currentPlaylist->getPlaylist().constLast();
@@ -229,22 +229,34 @@ void UiPlayer::addTrack(const QString &playlistName, const TrackData &trackData)
 
 void UiPlayer::checkDataPath()
 {
-    qDebug() << "cacheLocation" << dataLocation;
     Settings::getInstance().setCacheLocation(dataLocation);
-
     QDir cacheDir(dataLocation);
+    qDebug() << "Cache" << cacheDir;
 
-    qDebug() << "Cli" << Settings::getInstance().getClientId();
     const auto userDir = QStringLiteral("playlist/%1").arg(Settings::getInstance().getClientId());
-    qDebug() << "userDir" << userDir;
+    cacheDir.mkpath(userDir);
 
-    cacheDir.mkdir(userDir);
-    const auto path = QStringLiteral("%1/%2").arg(dataLocation, userDir);
-    QDir directory(path);
+    const auto playlisttPath = QStringLiteral("%1/%2").arg(dataLocation, userDir);
+    QDir directory(playlisttPath);
     QStringList jsonFiles = directory.entryList(QStringList() << QStringLiteral("*.json") << QStringLiteral("*.JSON"), QDir::Files);
     if(!jsonFiles.empty())
     {
         for(const auto &it : jsonFiles)
-            loadPlaylist(path, it);
+            loadPlaylist(playlisttPath, it);
     }
+}
+
+QString UiPlayer::getPreviewUrl()
+{
+    auto * currentPlaylist = getCurrentPlaylist();
+
+    //não selecionou nenhum música específica da playlista para ser tocada
+    if(ui->listWidget->currentIndex().data().toString().isEmpty())
+    {
+        const auto playlistSize = ui->listViewPlaylist->count();
+        const uint rIndex = QRandomGenerator::global()->bounded(playlistSize + 1);
+        return currentPlaylist->getPreviewUrl(rIndex);
+    }
+
+    return currentPlaylist->getPreviewUrl(ui->listWidget->currentIndex().row());
 }

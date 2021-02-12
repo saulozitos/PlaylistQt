@@ -29,6 +29,7 @@ QVector<TrackData> SearchFormatter::track(const QJsonObject &jsonObject)
         td.track.name = map[QStringLiteral("name")].toString();
         td.track.id = map[QStringLiteral("id")].toString();
         td.track.duration = map[QStringLiteral("duration_ms")].toUInt();
+        td.previewUrl = map[QStringLiteral("preview_url")].toString();
 
         out.push_back(td);
     }

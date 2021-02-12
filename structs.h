@@ -19,4 +19,5 @@ struct TrackData
 {
     Track track;
     Artist artist;
+    QString previewUrl;
 };
