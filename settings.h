@@ -23,14 +23,6 @@ public:
     QString getAccessToken() const;
     void setAccessToken(const QString &value);
 
-    QString getRefreshToken() const;
-    void setRefreshToken(const QString &value);
-
-    void clearSettings();
-
-    std::chrono::seconds getAccessTokenExpiryTime() const;
-    void setAccessTokenExpiryTime(const int value);
-
     QString getCacheLocation() const;
     void setCacheLocation(const QString &value);
 
@@ -46,7 +38,5 @@ private:
     QString redirect;
     QString code;
     QString accessToken;
-    QString refreshToken;
-    std::chrono::seconds accessTokenExpiryTime{};
 };
 

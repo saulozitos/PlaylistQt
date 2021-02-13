@@ -11,8 +11,7 @@ Settings::Settings() :
     clientSecret(QLatin1String("")),
     redirect(DevAcount::addrRedirect),
     code(QLatin1String("")),
-    accessToken(QLatin1String("")),
-    refreshToken(QLatin1String(""))
+    accessToken(QLatin1String(""))
 {}
 
 QString Settings::getCacheLocation() const
@@ -80,35 +79,3 @@ void Settings::setAccessToken(const QString &value)
 {
     accessToken = value;
 }
-
-QString Settings::getRefreshToken() const
-{
-    return refreshToken;
-}
-
-void Settings::setRefreshToken(const QString &value)
-{
-    refreshToken = value;
-}
-
-void Settings::clearSettings()
-{
-    clientId.clear();
-    clientSecret.clear();
-    redirect.clear();
-    code.clear();
-    accessToken.clear();
-    refreshToken.clear();
-    accessTokenExpiryTime.zero();
-}
-
-std::chrono::seconds Settings::getAccessTokenExpiryTime() const
-{
-    return accessTokenExpiryTime;
-}
-
-void Settings::setAccessTokenExpiryTime(const int value)
-{
-    accessTokenExpiryTime = std::chrono::seconds(value);
-}
-
