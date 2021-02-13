@@ -24,16 +24,12 @@ Auth::Auth(QWidget *parent) : QDialog(parent),
             return;
         }
 
-        if(server->isListening())
-            qDebug() << "Sever listening in port" << server->serverPort() << "\n";
-
         QTcpServer::connect(server.get(), &QTcpServer::newConnection, [this]()
         {
             // Read
             auto *socket = server->nextPendingConnection();
             socket->waitForReadyRead();
             auto response = QString(socket->readAll());
-            qDebug() << "response" << response << "\n";
 
             // Client might want to request favicon or something
             if (!response.contains(QLatin1String("?code=")))
@@ -135,16 +131,11 @@ QString Auth::auth()
     const auto jsonData = QJsonDocument::fromJson(reply->readAll()).object();
     reply->deleteLater();
 
-    QJsonDocument doc(jsonData);
-    qDebug().noquote() << "JsonData" << doc.toJson(QJsonDocument::Indented) << "\n";
-
     if (jsonData.contains(QStringLiteral("error_description")))
         return jsonData[QStringLiteral("error_description")].toString();
 
     // Save access/refresh token
     settings.setAccessToken(jsonData[QStringLiteral("access_token")].toString());
-    settings.setRefreshToken(jsonData[QStringLiteral("refresh_token")].toString());
-    settings.setAccessTokenExpiryTime(jsonData[QStringLiteral("expires_in")].toInt());
 
     return QString();
 }
