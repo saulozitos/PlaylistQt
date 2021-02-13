@@ -53,6 +53,7 @@ UiPlayer::UiPlayer(QWidget *parent) :
         isPlaying = false;
         isPaused = false;
         ui->btnPlay->setText(ButtonName::play);
+        ui->lbMusic->clear();
         removePlaylist();
     });
 }
