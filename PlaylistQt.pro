@@ -12,7 +12,7 @@ SOURCES += \
     auth.cpp \
     main.cpp \
     playlist.cpp \
-    searchformatter.cpp \
+    searchengine.cpp \
     settings.cpp \
     spotify.cpp \
     stackedspotify.cpp \
@@ -21,12 +21,12 @@ SOURCES += \
 
 HEADERS += \
     auth.h \
+    musictrack.h \
     playlist.h \
-    searchformatter.h \
+    searchengine.h \
     settings.h \
     spotify.h \
     stackedspotify.h \
-    structs.h \
     uilogin.h \
     uiplayer.h
 

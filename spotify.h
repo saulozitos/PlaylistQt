@@ -11,18 +11,11 @@ class Spotify : public QObject
     Q_OBJECT
 public:
     explicit Spotify(QObject *parent = nullptr);
+    ~Spotify() = default;
     QJsonObject search(const QString &value);
-    void play(const QString &value);
-    void pause();
-    void stop();
-    void next();
-    void previous();
 
 private:
     std::unique_ptr<QNetworkAccessManager>networkManager;
     QNetworkRequest request(const QString &url);
-
-signals:
-
 };
 
