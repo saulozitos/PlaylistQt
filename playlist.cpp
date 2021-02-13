@@ -7,71 +7,72 @@
 #include <QJsonArray>
 #include <QFile>
 #include <QDir>
+#include <QUrl>
 
-Playlist::Playlist(QString playlistName) : name(std::move(playlistName))
+Playlist::Playlist(QString playlistName) : playlist(new QMediaPlaylist())
 {
     const auto cache = Settings::getInstance().getCacheLocation();
     const auto id = Settings::getInstance().getClientId();
     path = QStringLiteral("%1/playlist/%2").arg(cache, id);
+    playlistFile = QStringLiteral("%1/%2.json").arg(path, playlistName);
 }
 
-void Playlist::addtrack(const TrackData &trackData)
+Playlist::~Playlist()
 {
-    playlist.push_back(trackData);
-    addToJsonArray(trackData);
+    delete playlist;
+}
+
+void Playlist::addtrack(const MusicTrack &musicTrack)
+{
+    playlistData.push_back(musicTrack);
+    playlist->addMedia(QUrl(musicTrack.urlPreview));
+    addToJsonArray(musicTrack);
 }
 
 void Playlist::removeTrack(const int index)
 {
-    playlist.remove(index);
+    playlistData.remove(index);
     list.removeAt(index);
-    mountJsonFile();
+    playlist->removeMedia(index);
+    updateJsonFile();
 }
 
 void Playlist::removeAll()
 {
-    while (!playlist.isEmpty()) {
-        playlist.removeLast();
-    }
+    playlistData.clear();
 
-    while (!list.isEmpty()) {
+    while (!list.isEmpty())
         list.removeLast();
-    }
 
-    mountJsonFile();
+    playlist->clear();
+
+    updateJsonFile();
 }
 
-QString Playlist::getName() const
+QVector<MusicTrack> Playlist::getPlaylistData() const
 {
-    return name;
+    return playlistData;
 }
 
-QVector<TrackData> Playlist::getPlaylist() const
+QMediaPlaylist *Playlist::getPlaylist() const
 {
     return playlist;
 }
 
-QString Playlist::getPreviewUrl(const int index)
-{
-    return playlist.at(index).previewUrl;
-}
-
-void Playlist::addToJsonArray(const TrackData &trackData)
+void Playlist::addToJsonArray(const MusicTrack &musicTrack)
 {
     QJsonObject newTrack
     {
-        {QStringLiteral("artistId"), trackData.artist.id},
-        {QStringLiteral("artistName"), trackData.artist.name},
-        {QStringLiteral("duration"), QString::number(trackData.track.duration)},
-        {QStringLiteral("trackId"), trackData.track.id},
-        {QStringLiteral("trackName"), trackData.track.name},
+        {QStringLiteral("artistName"), musicTrack.artistName},
+        {QStringLiteral("trackName"), musicTrack.musicaName},
+        {QStringLiteral("urlPreview"), musicTrack.urlPreview},
     };
 
     list.append(newTrack);
-    mountJsonFile();
+    updateJsonFile();
 }
 
-void Playlist::mountJsonFile()
+void Playlist::updateJsonFile()
 {
     QJsonObject tracks;
     tracks[QStringLiteral("tracks")] = list;
@@ -82,8 +83,6 @@ void Playlist::mountJsonFile()
 
 void Playlist::saveJsonFile(const QJsonDocument &doc)
 {
-    QString playlistFile = QStringLiteral("%1/%2.json").arg(path, name);
-
     QFile file(playlistFile);
     if(!file.open(QIODevice::WriteOnly | QIODevice::Text))
         return;

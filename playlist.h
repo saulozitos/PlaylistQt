@@ -1,31 +1,32 @@
 #pragma once
 
-#include "structs.h"
+#include "musictrack.h"
 #include <QString>
 #include <QVector>
 #include <QJsonArray>
+#include <QMediaPlaylist>
 
 class Playlist
 {
 public:
     explicit Playlist(QString playlistName);
-    void addtrack(const TrackData &trackData);
+    ~Playlist();
+    void addtrack(const MusicTrack &musicTrack);
     void removeTrack(const int index);
     void removeAll();
 
-    QString getName() const;
-
-    QVector<TrackData> getPlaylist() const;
-
-    QString getPreviewUrl(const int index);
+    QVector<MusicTrack> getPlaylistData() const;
+    QMediaPlaylist *getPlaylist() const;
 
 private:
-    QString name;
-    QVector<TrackData>playlist;
+    QString playlistFile;
+    QVector<MusicTrack>playlistData;
+    QMediaPlaylist *playlist;
+
     QJsonArray list;
     QString path;
-    void addToJsonArray(const TrackData &trackData);
-    void mountJsonFile();
+    void addToJsonArray(const MusicTrack &musicTrack);
+    void updateJsonFile();
     void saveJsonFile(const QJsonDocument &doc);
 };
 

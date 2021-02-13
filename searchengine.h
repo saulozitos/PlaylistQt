@@ -5,13 +5,14 @@
 #include <QVector>
 #include <QPair>
 
-class TrackData;
+class MusicTrack;
 
-class SearchFormatter
+class SearchEngine
 {
 public:
-    SearchFormatter();
-    QVector<TrackData> track(const QJsonObject &jsonObject);
-    QPair<QString, QVector<TrackData>>getPlaylistData(const QString &path, const QString &file);
+    SearchEngine() = default;
+    ~SearchEngine() = default;
+    QVector<MusicTrack> getDataTrackFromJson(const QJsonObject &jsonObject);
+    QPair<QString, QVector<MusicTrack>>getPlaylistData(const QString &path, const QString &file);
 };
 

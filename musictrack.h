@@ -2,22 +2,9 @@
 
 #include <QString>
 
-struct Track
+struct MusicTrack
 {
-    QString id;
-    QString name;
-    uint duration;
-};
-
-struct Artist
-{
-    QString id;
-    QString name;
-};
-
-struct TrackData
-{
-    Track track;
-    Artist artist;
-    QString previewUrl;
+    QString musicaName;
+    QString artistName;
+    QString urlPreview;
 };

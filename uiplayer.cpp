@@ -1,16 +1,17 @@
 #include "uiplayer.h"
 #include "ui_uiplayer.h"
-#include "searchformatter.h"
+#include "searchengine.h"
 #include "playlist.h"
-#include "structs.h"
+#include "musictrack.h"
 #include <QDir>
 #include <QStandardPaths>
 #include <QInputDialog>
 #include <QRandomGenerator>
+#include <QMessageBox>
+#include <QMediaPlayer>
+#include <QMediaPlaylist>
 #include <algorithm>
 #include "settings.h"
-
-#include <QDebug>
 
 namespace ButtonName
 {
@@ -22,8 +23,11 @@ UiPlayer::UiPlayer(QWidget *parent) :
     QWidget(parent),
     ui(new Ui::UiPlayer),
     isPlaying(false),
+    isPaused(false),
     dataLocation(QStandardPaths::standardLocations(QStandardPaths::CacheLocation).constFirst()),
-    spotify(std::make_unique<Spotify>(this))
+    spotify(std::make_unique<Spotify>(this)),
+    playlist(nullptr),
+    player(new QMediaPlayer(this))
 {
     ui->setupUi(this);
 
@@ -45,50 +49,79 @@ UiPlayer::UiPlayer(QWidget *parent) :
         ui->btnAddTrack->setEnabled(index > -1);
         ui->btnRemoveTrack->setEnabled(index > -1);
         ui->btnRemovePlaylist->setEnabled(index > -1);
+        player->stop();
+        isPlaying = false;
+        isPaused = false;
+        ui->btnPlay->setText(ButtonName::play);
         removePlaylist();
     });
 }
 
 UiPlayer::~UiPlayer()
 {
-    if(!playlists.isEmpty())
-        for(const auto &it : qAsConst(playlists))
+    if(!dataPlaylists.isEmpty())
+        for(const auto &it : qAsConst(dataPlaylists))
             delete it.second;
 
+    delete playlist;
+    delete player;
     delete ui;
 }
 
 void UiPlayer::on_btnBack_clicked()
 {
+    if(ui->playlistTracks->count() < 1) return;
 
+    if(playlist != nullptr)
+        playlist->previous();
+
+    updateButtonPlay();
 }
 
 void UiPlayer::on_btnPlay_clicked()
 {
+    if(ui->playlistTracks->count() < 1) return;
+
     if(!isPlaying)
     {
+        if(!isPaused) getPlaylist();
+
+        player->play();
+        isPaused = false;
         isPlaying = true;
         ui->btnPlay->setText(ButtonName::pause);
     }
     else
     {
+        isPaused = true;
         isPlaying = false;
+        player->pause();
         ui->btnPlay->setText(ButtonName::play);
     }
+
 }
 
 void UiPlayer::on_btnStop_clicked()
 {
+    if(ui->playlistTracks->count() < 1) return;
+
     if(isPlaying)
     {
         isPlaying = false;
+        player->stop();
         ui->btnPlay->setText(ButtonName::play);
+        ui->lbMusic->clear();
     }
 }
 
 void UiPlayer::on_btnForward_clicked()
 {
+    if(ui->playlistTracks->count() < 1) return;
 
+    if(playlist != nullptr)
+        playlist->next();
+
+    updateButtonPlay();
 }
 
 void UiPlayer::on_btnSearch_clicked()
@@ -96,20 +129,17 @@ void UiPlayer::on_btnSearch_clicked()
     if(ui->listWidget->count() > -1)
         ui->listWidget->clear();
 
-    if(!dataSearch.isEmpty())
-        dataSearch.clear();
+    if(!searchResult.isEmpty())
+        searchResult.clear();
 
-    const auto trackName = ui->lnSearch->text();
-    if(!trackName.isEmpty())
+    const auto textToSearch = ui->lnSearch->text();
+    if(!textToSearch.isEmpty())
     {
-        SearchFormatter sf;
-        dataSearch = sf.track(spotify->search(trackName));
+        SearchEngine se;
+        searchResult = se.getDataTrackFromJson(spotify->search(textToSearch));
 
-        for(const auto &it : qAsConst(dataSearch))
-        {
-            QString dado = QStringLiteral("%1 - %2").arg(it.track.name, it.artist.name);
-            ui->listWidget->addItem(dado);
-        }
+        for(const auto &musicTrack : qAsConst(searchResult))
+            ui->listWidget->addItem(QStringLiteral("%1 - %2").arg(musicTrack.musicaName, musicTrack.artistName));
     }
 }
 
@@ -122,57 +152,68 @@ void UiPlayer::on_btnNewPlaylist_clicked()
 
 void UiPlayer::on_btnRemovePlaylist_clicked()
 {
-    const auto playlistName = ui->comboBox->currentText();
-    if(!playlistName.isEmpty())
+    const auto selectedPlaylistName = ui->comboBox->currentText();
+    if(!selectedPlaylistName.isEmpty())
     {
-        playlists.erase(
-                    std::remove_if(playlists.begin(), playlists.end(), [playlistName](const QPair<QString, Playlist*>&p){
-            return p.first == playlistName;
-        }), playlists.end());
+        auto *currentPlaylist = getAddrFromCurrentPlaylist();
+        if(currentPlaylist != nullptr)
+        {
+            currentPlaylist->removeAll();
 
-        auto *currentPlaylist = getCurrentPlaylist();
-        currentPlaylist->removeAll();
+            for(auto it = 0; it < dataPlaylists.size(); ++it)
+                if(dataPlaylists.at(it).first == selectedPlaylistName)
+                    dataPlaylists.remove(it);
 
-        ui->comboBox->removeItem(ui->comboBox->currentIndex());
+            ui->playlistTracks->clear();
+            ui->comboBox->removeItem(ui->comboBox->currentIndex());
+        }
     }
-
-    if(ui->comboBox->currentText().isEmpty() && ui->listViewPlaylist->count() > 0)
-        ui->listViewPlaylist->clear();
 }
 
 void UiPlayer::on_btnAddTrack_clicked()
 {
     if(!ui->listWidget->currentIndex().data().toString().isEmpty())
     {
-        const auto trackData = dataSearch.at(ui->listWidget->currentIndex().row());
-        addTrack(trackData);
+        const auto musicTrack = searchResult.at(ui->listWidget->currentIndex().row());
+        if(musicTrack.urlPreview.isEmpty())
+        {
+            QMessageBox msgBox;
+            msgBox.setText(QStringLiteral("The music %1 does not have a sample in Spotify API to play and will not be added to your playlist").arg(
+                               musicTrack.musicaName));
+            msgBox.exec();
+        }
+        else
+            addTrack(musicTrack);
     }
 }
 
 void UiPlayer::on_btnRemoveTrack_clicked()
 {
-    const auto playlistName = ui->comboBox->currentText();
-    if(!playlistName.isEmpty())
+    const auto selectedPlaylistName = ui->comboBox->currentText();
+    if(!selectedPlaylistName.isEmpty())
     {
-        auto *currentPlaylist = getCurrentPlaylist();
-        currentPlaylist->removeTrack(ui->listViewPlaylist->currentIndex().row());
-
-        if(ui->listViewPlaylist->count() > 0)
-            ui->listViewPlaylist->clear();
-
-        for(auto &it : currentPlaylist->getPlaylist())
+        auto *currentPlaylist = getAddrFromCurrentPlaylist();
+        if(currentPlaylist != nullptr)
         {
-            const auto name = QStringLiteral("%1 - %2").arg(it.track.name, it.artist.name);
-            ui->listViewPlaylist->addItem(name);
+            currentPlaylist->removeTrack(ui->playlistTracks->currentIndex().row());
+
+            if(ui->playlistTracks->count() > 0)
+                ui->playlistTracks->clear();
+
+            for(auto &musicTrack : currentPlaylist->getPlaylistData())
+            {
+                const auto dataTrack = QStringLiteral("%1 - %2").arg(musicTrack.musicaName, musicTrack.artistName);
+                ui->playlistTracks->addItem(dataTrack);
+            }
         }
     }
 }
 
-Playlist *UiPlayer::getCurrentPlaylist()
+Playlist *UiPlayer::getAddrFromCurrentPlaylist()
 {
-    const auto playlistName = ui->comboBox->currentText();
-    return std::find_if(playlists.begin(), playlists.end(), [playlistName] (const QPair<QString, Playlist*>&pair) {
-        return pair.first == playlistName;
+    const auto selectedPlaylistName = ui->comboBox->currentText();
+    return std::find_if(dataPlaylists.begin(), dataPlaylists.end(), [selectedPlaylistName] (const QPair<QString, Playlist*>&pair) {
+        return pair.first == selectedPlaylistName;
     })->second;
 }
 
@@ -180,58 +221,60 @@ void UiPlayer::removePlaylist()
 {
     if(!ui->comboBox->currentText().isEmpty())
     {
-        auto *currentPlaylist = getCurrentPlaylist();
-
-        if(ui->listViewPlaylist->count() > 0)
-            ui->listViewPlaylist->clear();
-
-        for(auto &it : currentPlaylist->getPlaylist())
+        auto *currentPlaylist = getAddrFromCurrentPlaylist();
+        if(currentPlaylist != nullptr)
         {
-            const auto name = QStringLiteral("%1 - %2").arg(it.track.name, it.artist.name);
-            ui->listViewPlaylist->addItem(name);
+            if(ui->playlistTracks->count() > 0)
+                ui->playlistTracks->clear();
+
+            for(auto &musicTrack : currentPlaylist->getPlaylistData())
+            {
+                const auto name = QStringLiteral("%1 - %2").arg(musicTrack.musicaName, musicTrack.artistName);
+                ui->playlistTracks->addItem(name);
+            }
         }
     }
 }
 
 void UiPlayer::loadPlaylist(const QString &path, const QString &file)
 {
-    SearchFormatter s;
-    const auto playlistData = s.getPlaylistData(path, file);
+    SearchEngine se;
+    const auto playlistData = se.getPlaylistData(path, file);
     const auto playlistName = playlistData.first;
     addPlayList(playlistName);
 
-    ui->listViewPlaylist->clear();
+    ui->playlistTracks->clear();
     for(const auto &trackData : playlistData.second)
-    {
         addTrack(trackData);
-    }
 }
 
 void UiPlayer::addPlayList(const QString &playlistName)
 {
     if(!playlistName.isEmpty())
     {
-        playlists.push_back({playlistName, new Playlist(playlistName)});
+        dataPlaylists.push_back({playlistName, new Playlist(playlistName)});
         ui->comboBox->addItem(playlistName);
         ui->comboBox->setCurrentText(playlistName);
     }
 }
 
-void UiPlayer::addTrack(const TrackData &trackData)
+void UiPlayer::addTrack(const MusicTrack &musicTrack)
 {
-    auto *currentPlaylist = getCurrentPlaylist();
-    currentPlaylist->addtrack(trackData);
+    auto *currentPlaylist = getAddrFromCurrentPlaylist();
+    if(currentPlaylist != nullptr)
+    {
+        currentPlaylist->addtrack(musicTrack);
 
-    auto last = currentPlaylist->getPlaylist().constLast();
-    const auto name = QStringLiteral("%1 - %2").arg(last.track.name, last.artist.name);
-    ui->listViewPlaylist->addItem(name);
+        auto lastTrack = currentPlaylist->getPlaylistData().constLast();
+        const auto dataTrack = QStringLiteral("%1 - %2").arg(lastTrack.musicaName, lastTrack.artistName);
+        ui->playlistTracks->addItem(dataTrack);
+    }
 }
 
 void UiPlayer::checkDataPath()
 {
     Settings::getInstance().setCacheLocation(dataLocation);
     QDir cacheDir(dataLocation);
-    qDebug() << "Cache" << cacheDir;
 
     const auto userDir = QStringLiteral("playlist/%1").arg(Settings::getInstance().getClientId());
     cacheDir.mkpath(userDir);
@@ -240,23 +283,47 @@ void UiPlayer::checkDataPath()
     QDir directory(playlisttPath);
     QStringList jsonFiles = directory.entryList(QStringList() << QStringLiteral("*.json") << QStringLiteral("*.JSON"), QDir::Files);
     if(!jsonFiles.empty())
-    {
         for(const auto &it : jsonFiles)
             loadPlaylist(playlisttPath, it);
+}
+
+void UiPlayer::getPlaylist()
+{
+    auto *currentPlaylist = getAddrFromCurrentPlaylist();
+    if(currentPlaylist != nullptr)
+    {
+        uint index = 0;
+        if(ui->playlistTracks->currentIndex().data().toString().isEmpty())
+        {
+            const auto playlistSize = ui->playlistTracks->count();
+            index = QRandomGenerator::global()->bounded(playlistSize);
+        }
+        else
+            index = ui->playlistTracks->currentIndex().row();
+
+        playlist = currentPlaylist->getPlaylist();
+
+        connect(playlist, &QMediaPlaylist::currentIndexChanged, [this] (int index)
+        {
+            if(index < 0)
+                playlist->setCurrentIndex(0);
+            else
+            {
+                auto *currentPlaylist = getAddrFromCurrentPlaylist();
+                const auto track = currentPlaylist->getPlaylistData().at(index);
+                const auto atualPlayback = QStringLiteral("Playing now: %1 - %2").arg(track.musicaName, track.artistName);
+                ui->lbMusic->setText(atualPlayback);
+            }
+
+        });
+
+        playlist->setCurrentIndex(index);
+        player->setPlaylist(playlist);
     }
 }
 
-QString UiPlayer::getPreviewUrl()
+void UiPlayer::updateButtonPlay()
 {
-    auto * currentPlaylist = getCurrentPlaylist();
-
-    //não selecionou nenhum música específica da playlista para ser tocada
-    if(ui->listWidget->currentIndex().data().toString().isEmpty())
-    {
-        const auto playlistSize = ui->listViewPlaylist->count();
-        const uint rIndex = QRandomGenerator::global()->bounded(playlistSize + 1);
-        return currentPlaylist->getPreviewUrl(rIndex);
-    }
-
-    return currentPlaylist->getPreviewUrl(ui->listWidget->currentIndex().row());
+    if(player->mediaStatus() == QMediaPlayer::NoMedia)
+        ui->btnPlay->setText(ButtonName::play);
 }

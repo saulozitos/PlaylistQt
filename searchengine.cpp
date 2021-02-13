@@ -1,45 +1,39 @@
-#include "searchformatter.h"
-#include "structs.h"
+#include "searchengine.h"
+#include "musictrack.h"
 #include <QJsonDocument>
 #include <QFile>
 
-SearchFormatter::SearchFormatter()
-{}
-
-QVector<TrackData> SearchFormatter::track(const QJsonObject &jsonObject)
+QVector<MusicTrack> SearchEngine::getDataTrackFromJson(const QJsonObject &jsonObject)
 {
-    auto variantMap = jsonObject.toVariantMap();
+    const auto variantMap = jsonObject.toVariantMap();
     const auto items = variantMap[QStringLiteral("tracks")].toMap()[QStringLiteral("items")].toList();
 
-    QVector<TrackData> out;
+    QVector<MusicTrack> out;
 
     for(const auto &it : items)
     {
-        TrackData td;
+        MusicTrack musicTrack;
         const auto map = it.toMap();
 
         const auto artists = map[QStringLiteral("album")].toMap()[QStringLiteral("artists")].toList();
         for(const auto &at : artists)
         {
             const auto map = at.toMap();
-            td.artist.name = map[QStringLiteral("name")].toString();
-            td.artist.id = map[QStringLiteral("id")].toString();
+            musicTrack.artistName = map[QStringLiteral("name")].toString();
         }
 
-        td.track.name = map[QStringLiteral("name")].toString();
-        td.track.id = map[QStringLiteral("id")].toString();
-        td.track.duration = map[QStringLiteral("duration_ms")].toUInt();
-        td.previewUrl = map[QStringLiteral("preview_url")].toString();
+        musicTrack.musicaName = map[QStringLiteral("name")].toString();
+        musicTrack.urlPreview = map[QStringLiteral("preview_url")].toString();
 
-        out.push_back(td);
+        out.push_back(musicTrack);
     }
 
     return out;
 }
 
-QPair<QString, QVector<TrackData> > SearchFormatter::getPlaylistData(const QString &path, const QString &file)
+QPair<QString, QVector<MusicTrack> > SearchEngine::getPlaylistData(const QString &path, const QString &file)
 {
-    QPair<QString, QVector<TrackData> > out;
+    QPair<QString, QVector<MusicTrack> > out;
     QString playlistName = file;
     playlistName = playlistName.remove(playlistName.size()-5, 5);
     out.first = playlistName;
@@ -56,14 +50,12 @@ QPair<QString, QVector<TrackData> > SearchFormatter::getPlaylistData(const QStri
     const auto list = variantMap[QStringLiteral("tracks")].toList();
     for(const auto &it : list)
     {
-        TrackData td;
+        MusicTrack musicTrack;
         const auto map = it.toMap();
-        td.artist.id = map[QStringLiteral("artistId")].toString();
-        td.artist.name = map[QStringLiteral("artistName")].toString();
-        td.track.duration = map[QStringLiteral("duration")].toUInt();
-        td.track.id = map[QStringLiteral("trackId")].toString();
-        td.track.name = map[QStringLiteral("trackName")].toString();
-        out.second.push_back(td);
+        musicTrack.artistName = map[QStringLiteral("artistName")].toString();
+        musicTrack.musicaName = map[QStringLiteral("trackName")].toString();
+        musicTrack.urlPreview = map[QStringLiteral("urlPreview")].toString();
+        out.second.push_back(musicTrack);
     }
 
     return out;

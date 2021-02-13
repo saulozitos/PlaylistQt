@@ -4,6 +4,8 @@
 #include <QString>
 #include <QPair>
 #include <QVector>
+#include <QMediaPlaylist>
+#include <QMediaPlayer>
 #include "auth.h"
 #include "spotify.h"
 #include <memory>
@@ -13,7 +15,7 @@ class UiPlayer;
 }
 
 class Playlist;
-class TrackData;
+class MusicTrack;
 
 class UiPlayer : public QWidget
 {
@@ -38,18 +40,22 @@ private:
     Ui::UiPlayer *ui;
 
     bool isPlaying;
+    bool isPaused;
     QString dataLocation;
 
     std::unique_ptr<Spotify>spotify;
-    QVector< QPair<QString, Playlist*>>playlists;
-    QVector<TrackData>dataSearch;
+    QVector< QPair<QString, Playlist*>>dataPlaylists;
+    QVector<MusicTrack>searchResult;
+    QMediaPlaylist *playlist;
+    QMediaPlayer *player;
 
-    Playlist* getCurrentPlaylist();
+    Playlist* getAddrFromCurrentPlaylist();
     void removePlaylist();
     void loadPlaylist(const QString &path, const QString &file);
     void addPlayList(const QString &playlistName);
-    void addTrack(const TrackData &trackData);
+    void addTrack(const MusicTrack &musicTrack);
     void checkDataPath();
-    QString getPreviewUrl();
+    void getPlaylist();
+    void updateButtonPlay();
 };
 
