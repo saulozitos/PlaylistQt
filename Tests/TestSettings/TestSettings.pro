@@ -7,7 +7,6 @@ CONFIG -= app_bundle
 TEMPLATE = app
 
 SOURCES +=  \
-    ../../PlaylistQt/settings.cpp \
     tst_testsettingsclass.cpp
 
 HEADERS += \
