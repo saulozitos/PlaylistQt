@@ -61,6 +61,10 @@ void TestPlaylistClass::removeTrack()
 void TestPlaylistClass::removeAll()
 {
     addtrack();
+    addtrack();
+    addtrack();
+    addtrack();
+    QVERIFY(playlist->getPlaylistData().size() == 4);
     playlist->removeAll();
     QVERIFY(playlist->getPlaylistData().empty());
 }
