@@ -7,7 +7,6 @@
 #include <QNetworkReply>
 #include <QNetworkRequest>
 #include <QDesktopServices>
-#include <QDebug>
 
 Auth::Auth(QWidget *parent) : QDialog(parent),
     networkManager(std::make_unique<QNetworkAccessManager>()),
