@@ -12,7 +12,7 @@ class SearchEngine
 public:
     SearchEngine() = default;
     ~SearchEngine() = default;
-    QVector<MusicTrack> getDataTrackFromJson(const QJsonObject &jsonObject);
-    QPair<QString, QVector<MusicTrack>>getPlaylistData(const QString &path, const QString &file);
+    QVector<MusicTrack> getDataTrackFromSpotifyJson(const QJsonObject &jsonObject);
+    QPair<QString, QVector<MusicTrack>>loadPlaylistFromJsonFile(const QString &path, const QString &file);
 };
 

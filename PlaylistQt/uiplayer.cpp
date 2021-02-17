@@ -137,7 +137,7 @@ void UiPlayer::on_btnSearch_clicked()
     if(!textToSearch.isEmpty())
     {
         SearchEngine se;
-        searchResult = se.getDataTrackFromJson(spotify->search(textToSearch));
+        searchResult = se.getDataTrackFromSpotifyJson(spotify->search(textToSearch));
 
         for(const auto &musicTrack : qAsConst(searchResult))
             ui->listWidget->addItem(QStringLiteral("%1 - %2").arg(musicTrack.musicaName, musicTrack.artistName));
@@ -240,7 +240,7 @@ void UiPlayer::removePlaylist()
 void UiPlayer::loadPlaylist(const QString &path, const QString &file)
 {
     SearchEngine se;
-    const auto playlistData = se.getPlaylistData(path, file);
+    const auto playlistData = se.loadPlaylistFromJsonFile(path, file);
     const auto playlistName = playlistData.first;
     addPlayList(playlistName);
 

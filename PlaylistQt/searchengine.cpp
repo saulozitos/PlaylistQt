@@ -3,7 +3,12 @@
 #include <QJsonDocument>
 #include <QFile>
 
-QVector<MusicTrack> SearchEngine::getDataTrackFromJson(const QJsonObject &jsonObject)
+///
+/// \brief SearchEngine::getDataTrackFromSpotifyJson
+/// \param jsonObject - json recebido pela API do Spotify em sua busca
+/// \return vector contendo os dados das músicas
+///
+QVector<MusicTrack> SearchEngine::getDataTrackFromSpotifyJson(const QJsonObject &jsonObject)
 {
     const auto variantMap = jsonObject.toVariantMap();
     const auto items = variantMap[QStringLiteral("tracks")].toMap()[QStringLiteral("items")].toList();
@@ -31,7 +36,13 @@ QVector<MusicTrack> SearchEngine::getDataTrackFromJson(const QJsonObject &jsonOb
     return out;
 }
 
-QPair<QString, QVector<MusicTrack> > SearchEngine::getPlaylistData(const QString &path, const QString &file)
+///
+/// \brief SearchEngine::loadPlaylistFromJsonFile
+/// \param path - diretório onde se encontram os arquivos json de playlists criadas
+/// \param file - nome da playlist. ex.. playlist.json
+/// \return pair com o nome da playlist e todas as suas músicas
+///
+QPair<QString, QVector<MusicTrack> > SearchEngine::loadPlaylistFromJsonFile(const QString &path, const QString &file)
 {
     QPair<QString, QVector<MusicTrack> > out;
     QString playlistName = file;

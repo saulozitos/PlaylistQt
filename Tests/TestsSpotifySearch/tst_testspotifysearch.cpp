@@ -42,8 +42,8 @@ void TestSpotifySearch::initTestCase()
 void TestSpotifySearch::getDataTrackFromJson()
 {
     SearchEngine se;
-    QVERIFY(se.getDataTrackFromJson({}).empty());
-    QVERIFY(!se.getDataTrackFromJson(jsonObject).empty());
+    QVERIFY(se.getDataTrackFromSpotifyJson({}).empty());
+    QVERIFY(!se.getDataTrackFromSpotifyJson(jsonObject).empty());
 }
 
 void TestSpotifySearch::getPlaylistData()
@@ -51,10 +51,10 @@ void TestSpotifySearch::getPlaylistData()
     const auto path = QStringLiteral("/home/saulo/.cache/PlaylistQt/playlist/b782dcea513b41f385613b99a7ad9945");
     const auto file = QStringLiteral("pedro.json");
     SearchEngine se;
-    QVERIFY(se.getPlaylistData("", "").first.isEmpty());
-    QVERIFY(se.getPlaylistData("", "").second.empty());
-    QVERIFY(!se.getPlaylistData(path, file).first.isEmpty());
-    QVERIFY(!se.getPlaylistData(path, file).second.empty());
+    QVERIFY(se.loadPlaylistFromJsonFile("", "").first.isEmpty());
+    QVERIFY(se.loadPlaylistFromJsonFile("", "").second.empty());
+    QVERIFY(!se.loadPlaylistFromJsonFile(path, file).first.isEmpty());
+    QVERIFY(!se.loadPlaylistFromJsonFile(path, file).second.empty());
 }
 
 QTEST_MAIN(TestSpotifySearch)
