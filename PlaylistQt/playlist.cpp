@@ -22,6 +22,10 @@ Playlist::~Playlist()
     delete playlist;
 }
 
+///
+/// \brief Playlist::addtrack - função para adicionar uma música a playlist
+/// \param musicTrack - parametro contendo as informações da música
+///
 void Playlist::addtrack(const MusicTrack &musicTrack)
 {
     playlistData.push_back(musicTrack);
@@ -29,6 +33,10 @@ void Playlist::addtrack(const MusicTrack &musicTrack)
     addToJsonArray(musicTrack);
 }
 
+///
+/// \brief Playlist::removeTrack - função para remover 1 música da playlist
+/// \param index - posição da música na playlist
+///
 void Playlist::removeTrack(const int index)
 {
     playlistData.remove(index);
@@ -37,6 +45,9 @@ void Playlist::removeTrack(const int index)
     updateJsonFile();
 }
 
+///
+/// \brief Playlist::removeAll - remove todas as músicas da playlist e ao final exclui a playlist
+///
 void Playlist::removeAll()
 {
     playlistData.clear();
@@ -49,16 +60,30 @@ void Playlist::removeAll()
     updateJsonFile();
 }
 
+///
+/// \brief Playlist::getPlaylistData
+/// \return vector contendo todas as dados de músicas da playlist
+///
 QVector<MusicTrack> Playlist::getPlaylistData() const
 {
     return playlistData;
 }
 
+///
+/// \brief Playlist::getPlaylist
+/// \return lista de conteúdo de mídia a ser reproduzido.
+///
 QMediaPlaylist *Playlist::getPlaylist() const
 {
     return playlist;
 }
 
+
+///
+/// \brief Playlist::addToJsonArray - adiciona os dados de uma música em uma lista
+/// para serem inseridos em um arquivo json
+/// \param musicTrack - dados de uma música a serem inseridos no json
+///
 void Playlist::addToJsonArray(const MusicTrack &musicTrack)
 {
     QJsonObject newTrack
@@ -72,6 +97,9 @@ void Playlist::addToJsonArray(const MusicTrack &musicTrack)
     updateJsonFile();
 }
 
+///
+/// \brief Playlist::updateJsonFile - atualiza o arquivo json a partir de uma lista
+///
 void Playlist::updateJsonFile()
 {
     QJsonObject tracks;
@@ -81,6 +109,10 @@ void Playlist::updateJsonFile()
     saveJsonFile(doc);
 }
 
+///
+/// \brief Playlist::saveJsonFile - salva o arquivo json
+/// \param doc - lista de arquivos músicais
+///
 void Playlist::saveJsonFile(const QJsonDocument &doc)
 {
     QFile file(playlistFile);
